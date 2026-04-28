@@ -57,6 +57,11 @@ pub trait ButtonVariants: Sized {
         self.with_variant(ButtonVariant::Danger)
     }
 
+    /// With the destructive style (alias to danger) for the Button.
+    fn destructive(self) -> Self {
+        self.with_variant(ButtonVariant::Destructive)
+    }
+
     /// With the warning style for the Button.
     fn warning(self) -> Self {
         self.with_variant(ButtonVariant::Warning)
@@ -143,6 +148,7 @@ pub enum ButtonVariant {
     Primary,
     Secondary,
     Danger,
+    Destructive,
     Info,
     Success,
     Warning,
@@ -554,25 +560,18 @@ impl RenderOnce for Button {
             })
             .refine_style(&self.style)
             .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                // Stop handle any click event when disabled.
-                // To avoid handle dropdown menu open when button is disabled.
                 if is_disabled {
                     cx.stop_propagation();
                     return;
                 }
-
-                // Avoid focus on mouse down.
                 window.prevent_default();
             })
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |event, window, cx| {
-                    // Stop handle any click event when disabled.
-                    // To avoid handle dropdown menu open when button is disabled.
                     if !clickable {
                         cx.stop_propagation();
                         return;
                     }
-
                     on_click(event, window, cx);
                 })
             })
@@ -661,6 +660,7 @@ impl ButtonVariant {
             Self::Primary => cx.theme().button_primary,
             Self::Secondary => cx.theme().secondary,
             Self::Danger => cx.theme().danger.mix_oklab(cx.theme().transparent, 0.2),
+            Self::Destructive => cx.theme().danger.mix_oklab(cx.theme().transparent, 0.2),
             Self::Warning => cx.theme().warning.mix_oklab(cx.theme().transparent, 0.2),
             Self::Success => cx.theme().success.mix_oklab(cx.theme().transparent, 0.2),
             Self::Info => cx.theme().info.mix_oklab(cx.theme().transparent, 0.2),
@@ -681,6 +681,7 @@ impl ButtonVariant {
             }
             Self::Secondary | Self::Ghost => cx.theme().secondary_foreground,
             Self::Danger => cx.theme().danger,
+            Self::Destructive => cx.theme().danger,
             Self::Warning => cx.theme().warning,
             Self::Success => cx.theme().success,
             Self::Info => cx.theme().info,
@@ -696,6 +697,13 @@ impl ButtonVariant {
             Self::Secondary => cx.theme().border,
             Self::Primary => cx.theme().button_primary,
             Self::Danger => {
+                if outline {
+                    cx.theme().danger.mix_oklab(transparent_white(), 0.4)
+                } else {
+                    cx.theme().danger
+                }
+            }
+            Self::Destructive => {
                 if outline {
                     cx.theme().danger.mix_oklab(transparent_white(), 0.4)
                 } else {
@@ -744,7 +752,7 @@ impl ButtonVariant {
     fn shadow(&self, outline: bool, _: &App) -> bool {
         match self {
             Self::Default => true,
-            Self::Primary | Self::Secondary | Self::Danger => outline,
+            Self::Primary | Self::Secondary | Self::Danger | Self::Destructive => outline,
             Self::Custom(c) => c.shadow,
             _ => false,
         }
@@ -780,6 +788,13 @@ impl ButtonVariant {
             }
             Self::Secondary => cx.theme().secondary_hover,
             Self::Danger => {
+                if outline {
+                    cx.theme().danger.mix_oklab(cx.theme().transparent, 0.2)
+                } else {
+                    cx.theme().danger.mix_oklab(cx.theme().transparent, 0.3)
+                }
+            }
+            Self::Destructive => {
                 if outline {
                     cx.theme().danger.mix_oklab(cx.theme().transparent, 0.2)
                 } else {
@@ -864,6 +879,7 @@ impl ButtonVariant {
                 }
             }
             Self::Danger => cx.theme().danger.mix_oklab(cx.theme().transparent, 0.4),
+            Self::Destructive => cx.theme().danger.mix_oklab(cx.theme().transparent, 0.4),
             Self::Warning => cx.theme().warning.mix_oklab(cx.theme().transparent, 0.4),
             Self::Success => cx.theme().success.mix_oklab(cx.theme().transparent, 0.4),
             Self::Info => cx.theme().info.mix_oklab(cx.theme().transparent, 0.4),
@@ -895,6 +911,7 @@ impl ButtonVariant {
             Self::Primary => cx.theme().button_primary_active,
             Self::Secondary | Self::Ghost => cx.theme().secondary_active,
             Self::Danger => cx.theme().danger_active,
+            Self::Destructive => cx.theme().danger_active,
             Self::Warning => cx.theme().warning_active,
             Self::Success => cx.theme().success_active,
             Self::Info => cx.theme().info_active,
@@ -926,6 +943,7 @@ impl ButtonVariant {
             Self::Default | Self::Link | Self::Ghost | Self::Text => cx.theme().transparent,
             Self::Primary => cx.theme().button_primary.opacity(0.15),
             Self::Danger => cx.theme().danger.opacity(0.15),
+            Self::Destructive => cx.theme().danger.opacity(0.15),
             Self::Warning => cx.theme().warning.opacity(0.15),
             Self::Success => cx.theme().success.opacity(0.15),
             Self::Info => cx.theme().info.opacity(0.15),
@@ -999,27 +1017,22 @@ mod tests {
 
     #[gpui::test]
     fn test_button_clickable_logic(_cx: &mut gpui::TestAppContext) {
-        // Button with click handler should be clickable
         let clickable = Button::new("test").on_click(|_, _, _| {});
         assert!(clickable.clickable());
 
-        // Disabled button should not be clickable
         let disabled = Button::new("test").disabled(true).on_click(|_, _, _| {});
         assert!(!disabled.clickable());
 
-        // Loading button should not be clickable
         let loading = Button::new("test").loading(true).on_click(|_, _, _| {});
         assert!(!loading.clickable());
     }
 
     #[gpui::test]
     fn test_button_variant_methods(_cx: &mut gpui::TestAppContext) {
-        // Test variant check methods
         assert!(ButtonVariant::Link.is_link());
         assert!(ButtonVariant::Text.is_text());
         assert!(ButtonVariant::Ghost.is_ghost());
 
-        // Test no_padding logic
         assert!(ButtonVariant::Link.no_padding());
         assert!(ButtonVariant::Text.no_padding());
         assert!(!ButtonVariant::Ghost.no_padding());
