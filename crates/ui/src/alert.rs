@@ -25,8 +25,7 @@ pub enum AlertVariant {
 impl AlertVariant {
     fn fg(&self, cx: &App) -> Hsla {
         match self {
-            Self::Default => cx.theme().foreground,
-            Self::Info => cx.theme().info,
+            Self::Default | Self::Info => cx.theme().info,
             Self::Success => cx.theme().success,
             Self::Warning => cx.theme().warning,
             Self::Error => cx.theme().danger,
@@ -35,8 +34,7 @@ impl AlertVariant {
 
     fn bg(&self, cx: &App) -> Hsla {
         match self {
-            Self::Default => cx.theme().background,
-            Self::Info => cx.theme().info.mix_oklab(transparent_white(), 0.04),
+            Self::Default | Self::Info => cx.theme().info.mix_oklab(transparent_white(), 0.04),
             Self::Success => cx.theme().success.mix_oklab(transparent_white(), 0.04),
             Self::Warning => cx.theme().warning.mix_oklab(transparent_white(), 0.04),
             Self::Error => cx.theme().danger.mix_oklab(transparent_white(), 0.04),
@@ -45,8 +43,7 @@ impl AlertVariant {
 
     fn border_color(&self, cx: &App) -> Hsla {
         match self {
-            Self::Default => cx.theme().border,
-            Self::Info => cx.theme().info.mix_oklab(transparent_white(), 0.3),
+            Self::Default | Self::Info => cx.theme().info.mix_oklab(transparent_white(), 0.3),
             Self::Success => cx.theme().success.mix_oklab(transparent_white(), 0.3),
             Self::Warning => cx.theme().warning.mix_oklab(transparent_white(), 0.3),
             Self::Error => cx.theme().danger.mix_oklab(transparent_white(), 0.3),
@@ -84,6 +81,13 @@ impl Alert {
             visible: true,
             on_close: None,
         }
+    }
+
+    /// Create a default informational alert (ShadCN default style).
+    pub fn default(id: impl Into<ElementId>, message: impl Into<Text>) -> Self {
+        Self::new(id, message)
+            .with_variant(AlertVariant::Default)
+            .icon(IconName::Info)
     }
 
     /// Create a new info [`AlertVariant::Info`] with the given message.
@@ -250,5 +254,19 @@ impl RenderOnce for Alert {
                 )
             })
             .into_any_element()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gpui::TestAppContext;
+
+    #[gpui::test]
+    fn test_default_is_info(cx: &mut TestAppContext) {
+        cx.update(|_| {
+            let _ = Alert::default("id", "msg");
+            let _ = Alert::info("id", "msg");
+        });
     }
 }

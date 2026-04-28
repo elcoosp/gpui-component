@@ -28,6 +28,15 @@ Alert::new("alert-with-title", "Your changes have been saved successfully.")
     .title("Success!")
 ```
 
+### Default Variant (ShadCN alignment)
+
+The `Alert::default` variant produces the same informational style as `Alert::info`,
+matching ShadCN's `variant="default"`.
+
+```sh
+Alert::default("default-alert", "This is a default informational alert.")
+```
+
 ### Alert Variants
 
 ```rust
